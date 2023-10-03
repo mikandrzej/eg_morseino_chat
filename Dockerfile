@@ -22,7 +22,6 @@ FROM python:alpine3.18
 WORKDIR /usr/src/app
 
 COPY eg_chat_server.py ./
-COPY requirements.txt ./
 
 EXPOSE 7373/udp
 
