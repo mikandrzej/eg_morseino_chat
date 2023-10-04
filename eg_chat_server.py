@@ -129,7 +129,7 @@ class Client:
             self.send_text(":1 = CQ, 2 = QSO:", 60)
         elif text == "1":
             self.state = "CQ"
-            self.send_text(":CQ MODE. To exit send ..--..--:", 60)
+            self.send_text(":CQ MODE. To exit send <SK>:", 60)
             discordHook.publishOperatorInfo(self.callsign, "Operator is in CQ mode")
         elif text == "2":
             self.state = "CALL"
@@ -140,9 +140,9 @@ class Client:
     def state_cq(self, text: str):
         if len(self.discord_message) > 0:
             self.discord_message += " "
-        if text == "K" or text == "<KN>" or text == "<EXIT>":
+        if text == "K" or text == "<KN>" or text == "<SK>":
             self.discord_publish_timeout = time.time()
-            if text == "<EXIT>":
+            if text == "<SK>":
                 self.state = "LOGGED_IN"
                 self.state_logged_in("?")
                 discordHook.publishOperatorInfo(self.callsign, "Operator leaves CQ mode")
@@ -152,7 +152,7 @@ class Client:
             self.discord_message += text
             self.discord_publish_timeout = time.time() + 8.0
         
-        self.morserino.send_to_cq_channel(text)
+        self.morserino.send_to_cq_channel(self, text)
         
 
     def state_call(self, text: str):
@@ -167,7 +167,7 @@ class Client:
             if partner_client is not None:
                 self.partner_client = partner_client
                 self.send_text(
-                    ":CONNECTED TO " + partner_callsign + ":TO EXIT SEND ..--..--:", 60
+                    ":CONNECTED TO " + partner_callsign + ":TO EXIT SEND <SK>:", 60
                 )
                 discordHook.publishOperatorInfo(self.callsign, "Operator is in QSO mode with %s" % partner_callsign)
                 self.state = "CALL_CONNECTED"
@@ -175,7 +175,7 @@ class Client:
                 self.send_text(":" + partner_callsign + " NOT LOGGED IN:", 60)
 
     def state_call_connected(self, text: str):
-        if text == "<EXIT>":
+        if text == "<SK>":
             self.state = "LOGGED_IN"
             self.state_logged_in("?")
             discordHook.publishOperatorInfo(self.callsign, "Operator leaves QSO mode")
@@ -219,11 +219,12 @@ class Morserino:
                 return client
         return None
     
-    def send_to_cq_channel(self, data):
+    def send_to_cq_channel(self, sender, data):
         for receiver in self.receivers:
             client = self.receivers[receiver]
-            if client.state == "CQ":
-                client.send_text(data)
+            if client != sender:
+                if client.state == "CQ":
+                    client.send_text(data)
 
 
 morserino = Morserino()

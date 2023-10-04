@@ -51,7 +51,7 @@ class EG_Mopper:
         "<ERR>": "......",
         "<KN>": "-.--.",
         "<BK>": "-...-.-",
-        "<EXIT>": "..--..--",
+        "<SK>": "...-.-",
         " ": "^",
     }
     morse_rev = {v: k for k, v in morse.items()}
