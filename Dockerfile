@@ -22,9 +22,6 @@ FROM python:alpine3.18
 WORKDIR /usr/src/app
 
 COPY eg_chat_server.py ./
-COPY eg_data_provider.py ./
-COPY eg_discord.py ./
-COPY eg_logs.py ./
 COPY eg_mopper.py ./
 COPY discord_hook.txt ./
 COPY requirements.txt ./
