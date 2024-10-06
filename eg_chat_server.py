@@ -3,28 +3,71 @@ import time
 import logging
 from eg_mopper import EG_Mopper
 from discord_webhook import DiscordWebhook
+import os
 
 logging.basicConfig()
 logging.root.setLevel(logging.DEBUG)
+logger = logging.getLogger("EG Chat server")
 
-SERVER_IP = "0.0.0.0"
-UDP_PORT = 7373
-MAX_CLIENTS = 100
-KEEPALIVE = 0.2
-TIMEOUT = 0.1
+SERVER_IP = os.getenv('SERVER_IP')
+UDP_PORT = os.getenv('UDP_PORT')
+MAX_CLIENTS = os.getenv('MAX_CLIENTS')
+KEEPALIVE = os.getenv('KEEPALIVE')
+TIMEOUT = os.getenv('TIMEOUT')
+ACTIVITY_TIMEOUT = os.getenv('ACTIVITY_TIMEOUT')
+KICKOFF_TIMEOUT = os.getenv('KICKOFF_TIMEOUT')
+ROOM_NUMBERS = os.getenv('ROOM_NUMBERS')
 
-ACTIVITY_TIMEOUT = 30
-KICKOFF_TIMEOUT = 60 * 60 * 6
+if not SERVER_IP:
+    SERVER_IP = "0.0.0.0"
+if UDP_PORT:
+    UDP_PORT = int(UDP_PORT)
+else:
+    UDP_PORT = 7373
+if MAX_CLIENTS:
+    MAX_CLIENTS = int(MAX_CLIENTS)
+else:
+    MAX_CLIENTS = 100
+if KEEPALIVE:
+    KEEPALIVE = float(KEEPALIVE)
+else:
+    KEEPALIVE = 0.2
+if TIMEOUT:
+    TIMEOUT = float(TIMEOUT)
+else:
+    TIMEOUT = 0.1
 
-ROOM_NUMBERS = 3
+if ACTIVITY_TIMEOUT:
+    ACTIVITY_TIMEOUT = int(ACTIVITY_TIMEOUT)
+else:
+    ACTIVITY_TIMEOUT = 30
+if KICKOFF_TIMEOUT:
+    KICKOFF_TIMEOUT = int(KICKOFF_TIMEOUT)
+else:
+    KICKOFF_TIMEOUT = 60 * 60 * 6
 
-ECHO_ON = True
+
+room_hooks = []
+if ROOM_NUMBERS:
+    ROOM_NUMBERS = int(ROOM_NUMBERS)
+    for k in range(ROOM_NUMBERS + 1):
+        hook = os.getenv(f'ROOM{k}_HOOK')
+        if not hook:   
+            logger.error("You MUST define ROOM0_HOOK and apropriate number of ROOM#_HOOK discord hooks!")
+            while(True):
+                pass
+        room_hooks.append(hook)
+else:
+    ROOM_NUMBERS = 1
+    room_hooks.append(R'hoooooooooooooook')
+    room_hooks.append(R'HOOOOOOOOOOK2')
+
+ECHO_ON = False
 
 serversock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 serversock.bind((SERVER_IP, UDP_PORT))
 serversock.settimeout(TIMEOUT)
 
-logger = logging.getLogger("EG Chat server")
 
 
 class Client:
@@ -234,17 +277,10 @@ class Morserino:
         self.init_rooms()
 
     def init_rooms(self):
-        urls = [None] * (ROOM_NUMBERS + 1)
-        try:
-            with open("discord_hook.txt") as f:
-                urls = [x.strip() for x in f.readlines()]
-        except:
-            logger.warning('Error occured during read "discord_hook.txt" file.')
-
-        if len(urls) == ROOM_NUMBERS + 1:
-            self.general_room = Room(urls[0])
+        if len(room_hooks) == ROOM_NUMBERS + 1:
+            self.general_room = Room(room_hooks[0])
             self.general_room.send_discord_msg("Morserino Server", "Server started")
-            for url in urls[1:]:
+            for url in room_hooks[1:]:
                 room = Room(url)
                 self.rooms.append(room)
         else:
